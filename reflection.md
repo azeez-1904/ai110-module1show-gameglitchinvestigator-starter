@@ -50,15 +50,18 @@ The AI helped me think of the parity edge-case test (`test_update_score_wrong_gu
 
 ## 4. What did you learn about Streamlit and state?
 
-- In your own words, explain why the secret number kept changing in the original app.
-- How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
-- What change did you make that finally gave the game a stable secret number?
+The secret number kept changing because Streamlit re-runs the entire Python script from top to bottom every single time the user interacts with the page — clicking a button, changing a dropdown, anything. Without protection, `random.randint(low, high)` would execute on every rerun and produce a new secret each time. The original code did use `if "secret" not in st.session_state` to guard the secret, so it was actually stable in this app. The bigger issue was that the `New Game` button reset `attempts` to `0` but left the secret tied to the old difficulty's range, and changing difficulty in the sidebar triggered a rerun that could expose a mismatch.
+
+Streamlit "reruns" are like refreshing a webpage — the whole script runs again, and any variable assigned normally just gets a fresh value. `st.session_state` is a special dictionary that Streamlit keeps alive between reruns, like a small memory. You write to it once (guarded by `if "key" not in st.session_state`) and then it survives every button click and widget change for the rest of the session. I tell friends to think of it like a sticky note on the fridge: normal variables are written on your hand and wash off, but session state is the sticky note that stays there until you peel it off.
+
+The change that stabilized the secret was already present (`if "secret" not in st.session_state`), but I ensured the `New Game` button also regenerated the secret correctly using the selected difficulty's range rather than always calling `random.randint(1, 100)` regardless of difficulty.
 
 ---
 
 ## 5. Looking ahead: your developer habits
 
-- What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
-- What is one thing you would do differently next time you work with AI on a coding task?
-- In one or two sentences, describe how this project changed the way you think about AI generated code.
+**Habit I want to reuse:** Reading the code before changing anything. In both phases I forced myself to read and annotate `app.py` fully before writing a single fix. This meant I found four bugs instead of the minimum two required, and I understood why each bug existed rather than just patching symptoms. In future projects I'll continue to read first, write FIXME comments at the "crime scene," and only then open an AI chat — because AI suggestions are much more accurate when you can give it a precise question tied to a specific line.
+
+**One thing I'd do differently:** I would write a failing test *before* implementing the fix (true test-driven development). This time I wrote the tests after the fix, which meant I was verifying my own solution rather than using the test to define what "correct" should look like. Writing the test first would have forced me to think through the expected behavior more carefully and would have caught a subtle issue with the `update_score` parity bug that I almost missed.
+
+**How this project changed my thinking about AI-generated code:** I used to assume that if an AI wrote code that runs without crashing, it was probably correct. This project proved that code can run perfectly and still have multiple logical bugs baked in — the AI wrote plausible-looking conditions (`attempt % 2 == 0`) that were completely wrong in context but looked intentional. I'll never trust AI-generated logic at face value again without reading it line by line and asking "what is this branch actually doing?"
