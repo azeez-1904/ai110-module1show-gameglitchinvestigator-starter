@@ -1,6 +1,12 @@
 def get_range_for_difficulty(difficulty: str):
     """Return (low, high) inclusive range for a given difficulty."""
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if difficulty == "Easy":
+        return 1, 20
+    if difficulty == "Normal":
+        return 1, 100
+    if difficulty == "Hard":
+        return 1, 50
+    return 1, 100
 
 
 def parse_guess(raw: str):
@@ -9,18 +15,56 @@ def parse_guess(raw: str):
 
     Returns: (ok: bool, guess_int: int | None, error_message: str | None)
     """
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if raw is None or raw == "":
+        return False, None, "Enter a guess."
+
+    try:
+        if "." in raw:
+            value = int(float(raw))
+        else:
+            value = int(raw)
+    except Exception:
+        return False, None, "That is not a number."
+
+    return True, value, None
 
 
 def check_guess(guess, secret):
     """
-    Compare guess to secret and return (outcome, message).
+    Compare guess to secret and return the outcome string.
 
-    outcome examples: "Win", "Too High", "Too Low"
+    Returns: "Win", "Too High", or "Too Low"
+
+    FIXME was here: original code had swapped hint messages AND a branch that
+    converted secret to str on even attempts, causing alphabetical comparison.
+    FIX: always compare integers, return just the outcome string (no message),
+    and correct the direction labels.
     """
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    if guess == secret:
+        return "Win"
+    if guess > secret:
+        # FIXME was here: original said "Go HIGHER!" when guess was too high — backwards.
+        # FIX: guess is above the secret, so player should go lower.
+        return "Too High"
+    return "Too Low"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
-    """Update score based on outcome and attempt number."""
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    """
+    Update score based on outcome and attempt number.
+
+    FIXME was here: "Too High" on even attempt numbers added +5 (rewarded wrong guesses).
+    FIX: wrong guesses always subtract 5, regardless of attempt parity.
+    """
+    if outcome == "Win":
+        points = 100 - 10 * attempt_number
+        if points < 10:
+            points = 10
+        return current_score + points
+
+    if outcome in ("Too High", "Too Low"):
+        # FIXME was here: original added +5 on even attempts for "Too High".
+        # FIX: always subtract 5 for any wrong guess.
+        return current_score - 5
+
+    return current_score
