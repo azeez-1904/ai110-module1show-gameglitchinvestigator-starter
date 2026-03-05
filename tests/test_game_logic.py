@@ -34,23 +34,50 @@ def test_check_guess_integer_comparison_consistency():
 # --- parse_guess ---
 
 def test_parse_guess_valid_integer():
-    ok, value, err = parse_guess("42")
+    ok, value, err = parse_guess("42", 1, 100)
     assert ok is True
     assert value == 42
     assert err is None
 
 def test_parse_guess_empty_string():
-    ok, value, err = parse_guess("")
+    ok, value, err = parse_guess("", 1, 100)
     assert ok is False
     assert value is None
 
 def test_parse_guess_float_string():
-    ok, value, err = parse_guess("7.9")
+    ok, value, err = parse_guess("7.9", 1, 100)
     assert ok is True
     assert value == 7
 
 def test_parse_guess_non_numeric():
-    ok, value, err = parse_guess("abc")
+    ok, value, err = parse_guess("abc", 1, 100)
+    assert ok is False
+
+def test_parse_guess_negative_number_rejected():
+    # FIX verification: negative numbers must be rejected as out of range
+    ok, value, err = parse_guess("-5", 1, 100)
+    assert ok is False
+    assert err is not None
+
+def test_parse_guess_above_range_rejected():
+    # FIX verification: numbers above high must be rejected
+    ok, value, err = parse_guess("101", 1, 100)
+    assert ok is False
+    assert err is not None
+
+def test_parse_guess_boundary_low_accepted():
+    ok, value, err = parse_guess("1", 1, 100)
+    assert ok is True
+    assert value == 1
+
+def test_parse_guess_boundary_high_accepted():
+    ok, value, err = parse_guess("100", 1, 100)
+    assert ok is True
+    assert value == 100
+
+def test_parse_guess_easy_range_rejects_above_20():
+    # Easy mode range is 1-20; guessing 50 should be rejected
+    ok, value, err = parse_guess("50", 1, 20)
     assert ok is False
 
 

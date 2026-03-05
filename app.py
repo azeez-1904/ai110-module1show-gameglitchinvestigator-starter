@@ -35,27 +35,30 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
-if "secret" not in st.session_state:
+def reset_game(low, high):
+    """Reset all game state for a fresh round using the current difficulty range."""
     st.session_state.secret = random.randint(low, high)
-
-if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
-
-if "score" not in st.session_state:
+    st.session_state.attempts = 0
     st.session_state.score = 0
-
-if "status" not in st.session_state:
     st.session_state.status = "playing"
-
-if "history" not in st.session_state:
     st.session_state.history = []
+    st.session_state.difficulty = difficulty
+
+# First-time initialisation
+if "secret" not in st.session_state:
+    reset_game(low, high)
+
+# FIX: Changing difficulty mid-game now resets the board so the secret
+# is always drawn from the correct range.
+if st.session_state.get("difficulty") != difficulty:
+    reset_game(low, high)
 
 st.subheader("Make a guess")
 
 # FIX: Was hardcoded "1 and 100" regardless of difficulty. Now uses the actual range.
 st.info(
     f"Guess a number between {low} and {high}. "
-    f"Attempts left: {attempt_limit - st.session_state.attempts}"
+    f"Attempts left: {attempt_limit - st.session_state.attempts} / {attempt_limit}"
 )
 
 with st.expander("Developer Debug Info"):
@@ -79,8 +82,9 @@ with col3:
     show_hint = st.checkbox("Show hint", value=True)
 
 if new_game:
-    st.session_state.attempts = 0
-    st.session_state.secret = random.randint(1, 100)
+    # FIX: was only resetting attempts and secret (hardcoded to 1-100).
+    # Now resets all state using the currently selected difficulty's range.
+    reset_game(low, high)
     st.success("New game started.")
     st.rerun()
 
@@ -92,14 +96,13 @@ if st.session_state.status != "playing":
     st.stop()
 
 if submit:
-    st.session_state.attempts += 1
-
-    ok, guess_int, err = parse_guess(raw_guess)
+    # FIX: attempts now increments only on a valid guess, not on blank/invalid input.
+    ok, guess_int, err = parse_guess(raw_guess, low, high)
 
     if not ok:
-        st.session_state.history.append(raw_guess)
         st.error(err)
     else:
+        st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
 
         # FIXME was here: even attempts converted secret to a string, causing
